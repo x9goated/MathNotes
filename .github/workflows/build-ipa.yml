@@ -1,0 +1,44 @@
+# Builds an unsigned MathNotes.ipa on a macOS runner.
+# Sideloadly signs it with your Apple ID when you install it on the iPad.
+name: Build IPA
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build app (unsigned)
+        run: |
+          xcodebuild build \
+            -project MathNotes.xcodeproj \
+            -scheme MathNotes \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      - name: Package IPA
+        run: |
+          mkdir Payload
+          cp -R build/Build/Products/Release-iphoneos/MathNotes.app Payload/
+          zip -qry MathNotes.ipa Payload
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: MathNotes-ipa
+          path: MathNotes.ipa
