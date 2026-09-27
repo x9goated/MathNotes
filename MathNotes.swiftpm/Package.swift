@@ -33,9 +33,15 @@ let package = Package(
             appCategory: .education
         )
     ],
+    dependencies: [
+        .package(url: "https://github.com/mgriebling/SwiftMath.git", exact: "1.7.3")
+    ],
     targets: [
         .executableTarget(
             name: "AppModule",
+            dependencies: [
+                .product(name: "SwiftMath", package: "SwiftMath")
+            ],
             path: "."
         )
     ]

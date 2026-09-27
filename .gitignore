@@ -5,6 +5,10 @@ Payload/
 *.ipa
 *.zip
 
+# Engine sources are copied here by CI before `swift test`
+EngineTests/Sources/
+EngineTests/.build/
+
 # Local tooling
 .claude/settings.local.json
 .DS_Store

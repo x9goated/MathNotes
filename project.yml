@@ -4,12 +4,19 @@ name: MathNotes
 options:
   deploymentTarget:
     iOS: "17.0"
+packages:
+  # Keep in sync with MathNotes.swiftpm/Package.swift.
+  SwiftMath:
+    url: https://github.com/mgriebling/SwiftMath
+    exactVersion: 1.7.3
 targets:
   MathNotes:
     type: application
     platform: iOS
     sources:
       - path: MathNotes.swiftpm/App
+    dependencies:
+      - package: SwiftMath
     settings:
       base:
         PRODUCT_NAME: MathNotes

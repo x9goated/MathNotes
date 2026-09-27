@@ -1,15 +1,6 @@
 import Foundation
 import Observation
 
-struct Note: Identifiable, Codable, Hashable {
-    var id = UUID()
-    var title: String
-    var createdAt = Date()
-    var updatedAt = Date()
-    /// PencilKit drawing, serialized with `PKDrawing.dataRepresentation()`.
-    var drawingData = Data()
-}
-
 /// Keeps the notes in memory and saves each one as a JSON file in the app's Documents folder.
 @MainActor
 @Observable
@@ -40,11 +31,19 @@ final class NoteStore {
     }
 
     func rename(_ id: Note.ID, to title: String) {
-        modify(id) { $0.title = title }
+        update(id) { $0.title = title }
     }
 
     func updateDrawing(_ data: Data, for id: Note.ID) {
-        modify(id) { $0.drawingData = data }
+        update(id) { $0.drawingData = data }
+    }
+
+    func updateLines(_ lines: [MathLine], for id: Note.ID) {
+        update(id) { $0.lines = lines }
+    }
+
+    func setPaper(_ paper: PaperStyle, for id: Note.ID) {
+        update(id) { $0.paper = paper }
     }
 
     func delete(_ note: Note) {
@@ -52,11 +51,14 @@ final class NoteStore {
         try? FileManager.default.removeItem(at: fileURL(for: note.id))
     }
 
-    private func modify(_ id: Note.ID, _ change: (inout Note) -> Void) {
+    func update(_ id: Note.ID, _ change: (inout Note) -> Void) {
         guard let index = notes.firstIndex(where: { $0.id == id }) else { return }
-        change(&notes[index])
-        notes[index].updatedAt = Date()
-        save(notes[index])
+        var note = notes[index]
+        change(&note)
+        guard note != notes[index] else { return }
+        note.updatedAt = Date()
+        notes[index] = note
+        save(note)
     }
 
     private func fileURL(for id: Note.ID) -> URL {

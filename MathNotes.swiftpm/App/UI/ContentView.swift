@@ -3,11 +3,17 @@ import SwiftUI
 struct ContentView: View {
     @Environment(NoteStore.self) private var store
     @State private var selection: Note.ID?
+    @State private var query = ""
+    @State private var showsSettings = false
+
+    private var visibleNotes: [Note] {
+        query.isEmpty ? store.notes : store.notes.filter { $0.matches(query) }
+    }
 
     var body: some View {
         NavigationSplitView {
             List(selection: $selection) {
-                ForEach(store.notes) { note in
+                ForEach(visibleNotes) { note in
                     VStack(alignment: .leading, spacing: 2) {
                         Text(note.title)
                             .font(.headline)
@@ -17,16 +23,25 @@ struct ContentView: View {
                     }
                 }
                 .onDelete { offsets in
-                    let deleted = offsets.map { store.notes[$0] }
+                    let deleted = offsets.map { visibleNotes[$0] }
                     for note in deleted {
                         store.delete(note)
                     }
                 }
             }
             .navigationTitle("Notes")
+            .searchable(text: $query, prompt: "Titres et formules")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showsSettings = true
+                    } label: {
+                        Label("Réglages", systemImage: "gearshape")
+                    }
+                }
                 ToolbarItem {
                     Button {
+                        query = ""
                         selection = store.createNote().id
                     } label: {
                         Label("Nouvelle note", systemImage: "square.and.pencil")
@@ -35,7 +50,7 @@ struct ContentView: View {
             }
         } detail: {
             if let id = selection, let note = store.note(id: id) {
-                NoteEditor(note: note)
+                NoteEditor(note: note, store: store)
                     .id(id)
             } else {
                 ContentUnavailableView(
@@ -45,30 +60,8 @@ struct ContentView: View {
                 )
             }
         }
-    }
-}
-
-struct NoteEditor: View {
-    @Environment(NoteStore.self) private var store
-    let note: Note
-    @State private var title: String
-
-    init(note: Note) {
-        self.note = note
-        _title = State(initialValue: note.title)
-    }
-
-    var body: some View {
-        CanvasView(drawingData: note.drawingData) { [store, id = note.id] data in
-            store.updateDrawing(data, for: id)
-        }
-        .ignoresSafeArea(.container, edges: .bottom)
-        // Tap the title in the navigation bar to rename the note.
-        .navigationTitle($title)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarRole(.editor)
-        .onChange(of: title) {
-            store.rename(note.id, to: title)
+        .sheet(isPresented: $showsSettings) {
+            SettingsView()
         }
     }
 }

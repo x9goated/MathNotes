@@ -1,4 +1,4 @@
-# Builds an unsigned MathNotes.ipa on a macOS runner.
+# Tests the math engine, then builds an unsigned MathNotes.ipa on a macOS runner.
 # Sideloadly signs it with your Apple ID when you install it on the iPad.
 name: Build IPA
 
@@ -8,6 +8,18 @@ on:
   workflow_dispatch:
 
 jobs:
+  engine-tests:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Test math engine
+        run: |
+          mkdir -p EngineTests/Sources/MathEngine
+          cp MathNotes.swiftpm/App/Engine/*.swift EngineTests/Sources/MathEngine/
+          cd EngineTests
+          swift test
+
   build:
     runs-on: macos-latest
     steps:
